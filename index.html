@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منظم يومي زجاجي | Glassmorphism Daily Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(120deg, #89f7fe 0%, #66a6ff 100%);
+            background-attachment: fixed;
+            color: #2c3e50;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.25);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        .btn-glass {
+            background: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        .btn-glass:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .btn-primary {
+            background-color: #66a6ff;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #509bf7;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(102, 166, 255, 0.5);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(102, 166, 255, 0.8);
+        }
+
+        .task-item.completed span {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+
+    <main class="w-full max-w-4xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-white text-shadow">يومي المنظم</h1>
+            <p class="text-white/80 mt-2">خطط يومك، ركز في عملك، وحقق أهدافك</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Pomodoro Timer -->
+            <div class="lg:col-span-1 glass-card p-6 flex flex-col items-center">
+                <h2 class="text-2xl font-bold mb-4">مؤقت التركيز (بومودورو)</h2>
+                <div id="pomodoro-timer" class="text-6xl font-bold my-4">25:00</div>
+                <div class="flex gap-2 mb-4">
+                    <button onclick="setTimer(25)" class="btn-glass px-3 py-1 rounded-lg text-sm">عمل</button>
+                    <button onclick="setTimer(5)" class="btn-glass px-3 py-1 rounded-lg text-sm">استراحة قصيرة</button>
+                    <button onclick="setTimer(15)" class="btn-glass px-3 py-1 rounded-lg text-sm">استراحة طويلة</button>
+                </div>
+                <!-- Custom Timer Input -->
+                <div class="flex gap-2 mb-4 w-full justify-center">
+                    <input type="number" id="custom-minutes" placeholder="دقائق" class="w-24 p-2 rounded-lg border-none text-center focus:ring-2 focus:ring-blue-400 focus:outline-none">
+                    <button onclick="setCustomTimer()" class="btn-glass px-4 py-2 rounded-lg text-sm font-semibold">تحديد وقت</button>
+                </div>
+                <div class="flex gap-4">
+                    <button id="start-pause-btn" class="btn-primary font-bold py-2 px-6 rounded-lg">ابدأ</button>
+                    <button onclick="resetTimer()" class="btn-glass py-2 px-6 rounded-lg">إعادة</button>
+                </div>
+            </div>
+
+            <!-- Schedule -->
+            <div class="lg:col-span-2 glass-card p-6">
+                 <!-- Header with Task Counter -->
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4">
+                    <h2 class="text-2xl font-bold">جدول مهامي اليومية</h2>
+                    <div id="task-counter" class="text-sm font-semibold bg-green-100 text-green-800 px-3 py-1 rounded-full mt-2 sm:mt-0">
+                        المهام المكتملة: 0 / 0
+                    </div>
+                </div>
+                
+                <!-- Add Task Form -->
+                <form id="add-task-form" class="flex flex-col sm:flex-row gap-2 mb-4">
+                    <input type="text" id="task-input" placeholder="اكتب مهمة جديدة..." class="flex-grow p-2 rounded-lg border-none focus:ring-2 focus:ring-blue-400 focus:outline-none" required>
+                    <input type="time" id="task-time-input" class="p-2 rounded-lg border-none focus:ring-2 focus:ring-blue-400 focus:outline-none" required>
+                    <button type="submit" class="btn-primary font-bold py-2 px-4 rounded-lg">إضافة مهمة</button>
+                </form>
+
+                <!-- Task List -->
+                <div id="task-list" class="space-y-3 max-h-80 overflow-y-auto pr-2">
+                    <!-- Tasks will be injected here by JS -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Elements ---
+            const taskForm = document.getElementById('add-task-form');
+            const taskInput = document.getElementById('task-input');
+            const taskTimeInput = document.getElementById('task-time-input');
+            const taskList = document.getElementById('task-list');
+            const pomodoroTimerEl = document.getElementById('pomodoro-timer');
+            const startPauseBtn = document.getElementById('start-pause-btn');
+            const customMinutesInput = document.getElementById('custom-minutes');
+            const taskCounterEl = document.getElementById('task-counter');
+
+            // --- Pomodoro State ---
+            let timerInterval;
+            let totalSeconds = 25 * 60;
+            let isRunning = false;
+            
+            // --- Task State ---
+            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+            // --- Notifications ---
+            function requestNotificationPermission() {
+                if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === 'granted') {
+                            new Notification('تم تفعيل الإشعارات!', {
+                                body: 'سيتم إعلامك ببدء المهام وانتهاء مؤقت التركيز.',
+                                icon: 'https://placehold.co/64x64/66a6ff/ffffff?text=🔔'
+                            });
+                        }
+                    });
+                }
+            }
+            
+            function sendNotification(title, body) {
+                if (Notification.permission === 'granted') {
+                    new Notification(title, { body, icon: 'https://placehold.co/64x64/66a6ff/ffffff?text=🔔' });
+                }
+            }
+
+            // --- Pomodoro Functions ---
+            const updateTimerDisplay = () => {
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                pomodoroTimerEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                document.title = `${pomodoroTimerEl.textContent} - يومي المنظم`;
+            };
+
+            const startTimer = () => {
+                if (isRunning) return;
+                isRunning = true;
+                startPauseBtn.textContent = 'إيقاف مؤقت';
+                timerInterval = setInterval(() => {
+                    totalSeconds--;
+                    updateTimerDisplay();
+                    if (totalSeconds < 0) {
+                        clearInterval(timerInterval);
+                        isRunning = false;
+                        startPauseBtn.textContent = 'ابدأ';
+                        document.title = 'انتهى الوقت! - يومي المنظم';
+                        sendNotification('انتهى الوقت!', `حان وقت أخذ قسط من الراحة أو بدء مهمة جديدة.`);
+                        resetTimer(); 
+                    }
+                }, 1000);
+            };
+
+            const pauseTimer = () => {
+                if (!isRunning) return;
+                isRunning = false;
+                startPauseBtn.textContent = 'استئناف';
+                clearInterval(timerInterval);
+            };
+
+            window.setTimer = (minutes) => {
+                clearInterval(timerInterval);
+                isRunning = false;
+                totalSeconds = minutes * 60;
+                updateTimerDisplay();
+                startPauseBtn.textContent = 'ابدأ';
+            };
+            
+            window.setCustomTimer = () => {
+                const minutes = parseInt(customMinutesInput.value, 10);
+                if (!isNaN(minutes) && minutes > 0) {
+                    setTimer(minutes);
+                    customMinutesInput.value = '';
+                }
+            };
+
+            window.resetTimer = () => {
+                setTimer(25); // Reset to default work time
+            };
+            
+            startPauseBtn.addEventListener('click', () => {
+                if (isRunning) {
+                    pauseTimer();
+                } else {
+                    startTimer();
+                }
+            });
+
+            // --- Task Functions ---
+            const saveTasks = () => {
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+            };
+
+            const renderTasks = () => {
+                taskList.innerHTML = '';
+
+                // Update task counter
+                const completedCount = tasks.filter(task => task.completed).length;
+                const totalCount = tasks.length;
+                taskCounterEl.textContent = `المهام المكتملة: ${completedCount} / ${totalCount}`;
+
+                if (tasks.length === 0) {
+                    taskList.innerHTML = `<p class="text-center text-gray-500">لا توجد مهام حتى الآن. أضف مهمة لتبدأ!</p>`;
+                    return;
+                }
+
+                // Sort tasks by time
+                tasks.sort((a, b) => a.time.localeCompare(b.time));
+
+                tasks.forEach(task => {
+                    const taskEl = document.createElement('div');
+                    taskEl.className = `task-item flex items-center justify-between p-3 rounded-lg bg-white/30 ${task.completed ? 'completed' : ''}`;
+                    taskEl.dataset.id = task.id;
+
+                    taskEl.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" onchange="toggleTask(${task.id})" ${task.completed ? 'checked' : ''} class="w-5 h-5 accent-blue-500 cursor-pointer">
+                            <span class="font-semibold">${task.text}</span>
+                            <span class="text-sm bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">${formatTime(task.time)}</span>
+                        </div>
+                        <div class="flex gap-2">
+                           <button onclick="editTaskPrompt(${task.id})" class="text-gray-600 hover:text-blue-600">✏️</button>
+                           <button onclick="deleteTask(${task.id})" class="text-gray-600 hover:text-red-600">🗑️</button>
+                        </div>
+                    `;
+                    taskList.appendChild(taskEl);
+                });
+            };
+
+            const formatTime = (timeString) => {
+                const [hourString, minute] = timeString.split(':');
+                const hour = parseInt(hourString, 10);
+                const ampm = hour >= 12 ? 'م' : 'ص';
+                const formattedHour = hour % 12 || 12;
+                return `${formattedHour}:${minute} ${ampm}`;
+            };
+            
+            taskForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const text = taskInput.value.trim();
+                const time = taskTimeInput.value;
+                if (text && time) {
+                    const newTask = {
+                        id: Date.now(),
+                        text: text,
+                        time: time,
+                        completed: false
+                    };
+                    tasks.push(newTask);
+                    saveTasks();
+                    renderTasks();
+                    taskInput.value = '';
+                    taskTimeInput.value = '';
+                }
+            });
+
+            window.toggleTask = (id) => {
+                const task = tasks.find(t => t.id === id);
+                if (task) {
+                    task.completed = !task.completed;
+                    saveTasks();
+                    renderTasks();
+                }
+            };
+            
+            window.deleteTask = (id) => {
+                tasks = tasks.filter(t => t.id !== id);
+                saveTasks();
+                renderTasks();
+            };
+
+            window.editTaskPrompt = (id) => {
+                const task = tasks.find(t => t.id === id);
+                if (task) {
+                    const newText = prompt('تعديل المهمة:', task.text);
+                    if (newText && newText.trim() !== '') {
+                        task.text = newText.trim();
+                        saveTasks();
+                        renderTasks();
+                    }
+                }
+            };
+
+            // --- Time-based Notifications ---
+            const checkScheduledTasks = () => {
+                const now = new Date();
+                const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+                tasks.forEach(task => {
+                    if (task.time === currentTime && !task.completed && !task.notified) {
+                        sendNotification('حان وقت المهمة!', `مهمتك "${task.text}" قد بدأت الآن.`);
+                        task.notified = true; // Add a flag to prevent repeated notifications
+                    }
+                });
+            };
+
+            // --- Initial Setup ---
+            requestNotificationPermission();
+            renderTasks();
+            updateTimerDisplay();
+            setInterval(checkScheduledTasks, 60000); // Check every minute
+        });
+    </script>
+</body>
+</html>
